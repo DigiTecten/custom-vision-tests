@@ -1,0 +1,19 @@
+{
+  "name": "customvision",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/cognitiveservices-customvision-prediction": "^5.1.2",
+    "@azure/cognitiveservices-customvision-training": "^5.2.0",
+    "dotenv": "^8.2.0",
+    "exponential-backoff": "^3.1.0",
+    "sharp": "^0.28.1",
+    "underscore": "^1.13.1"
+  }
+}
