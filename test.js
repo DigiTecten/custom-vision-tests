@@ -45,8 +45,8 @@ const generateTestPermutations = async (fileName, tag, projectId) => {
   const image = sharp(`TrainingPictograms/${fileName}`);
   const imageMetadata = await image.metadata();
 
-  const rotatePermutations = [10, 55, 45, 90, 111, 135, 180, 225, 270, 315];
-  const resizePermutations = [1, 1.2, 0.9, [1, 1.2], [1.3, 1]];
+  const rotatePermutations = [45, 90, 135, 180, 225, 270, 315];
+  const resizePermutations = [0.5, 0.4, 0.6];
 
   const permutationConfig = generatePermutations(
     rotatePermutations,
@@ -59,7 +59,7 @@ const generateTestPermutations = async (fileName, tag, projectId) => {
         return [
           tag,
           image
-            .rotate(rotation, { background: "#fff" })
+            .rotate(rotation, { background: "#ffffff00" })
             .resize(
               Math.round(imageMetadata.width * scale),
               Math.round(imageMetadata.height * scale)
@@ -71,7 +71,7 @@ const generateTestPermutations = async (fileName, tag, projectId) => {
         return [
           tag,
           image
-            .rotate(rotation, { background: "#fff" })
+            .rotate(rotation, { background: "#ffffff00" })
             .resize(
               Math.round(imageMetadata.width * scale[0]),
               Math.round(imageMetadata.height * scale[1])
@@ -100,11 +100,65 @@ const createTagIfNotExisting = async (projectId, tagName) => {
   );
 };
 
+const addNoise = async (image) => {
+  const meta = await image.metadata();
+  const noiseImagePaths = (await fs.promises.readdir("noise_images")).filter(
+    (name) => !name.startsWith(".")
+  );
+  const noiseImages = noiseImagePaths.map((path) =>
+    sharp(`noise_images/${path}`)
+  );
+
+  for (let i = 0; i < 160; i++) {
+    const newVersion = image
+      .composite([
+        {
+          input: await noiseImages[_.random(0, noiseImages.length - 1)]
+            .png()
+            .toBuffer(),
+          left: _.random(0, meta.width),
+          top: _.random(0, meta.height),
+        },
+      ])
+      .png()
+      .toBuffer();
+    image = sharp(await newVersion);
+  }
+
+  return image;
+};
+
+const getUnusedPosition = (blocked, width, height) => {
+  const randomLeft = _.random(0, 1600);
+  const randomTop = _.random(0, 1600);
+
+  if (
+    blocked.some((item) => {
+      if (
+        randomLeft > item[0] + item[2] ||
+        randomLeft + width < item[0] ||
+        randomTop > item[1] + item[3] ||
+        randomTop + height < item[1]
+      ) {
+        return false;
+      } else {
+        return true;
+      }
+    })
+  ) {
+    return getUnusedPosition(blocked, width, height);
+  } else {
+    blocked.push([randomLeft, randomTop, width, height]);
+    return [randomLeft, randomTop];
+  }
+};
+
 const testTrain = async () => {
   const sampleProject = await trainer.getProject(process.env.PROJECT_ID);
-  const fileUploadPromises = [];
 
-  const files = await fs.promises.readdir("TrainingPictograms");
+  const files = (await fs.promises.readdir("TrainingPictograms")).filter(
+    (name) => !name.startsWith(".")
+  );
   const tags = await Promise.all(
     files.map(async (file) => {
       return [
@@ -124,30 +178,35 @@ const testTrain = async () => {
     ))
   );
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 80; i++) {
     const regions = [];
     let trainingImage = sharp({
       create: {
-        width: 1000,
-        height: 1000,
-        channels: 3,
+        width: 2000,
+        height: 2000,
+        channels: 4,
         background: { r: 255, g: 255, b: 255 },
       },
     });
-    for (let j = 0; j < 20; j++) {
+    const blockedAreas = [];
+    trainingImage = await addNoise(trainingImage);
+    for (let j = 0; j < 10; j++) {
       const randomPermutation =
         permutationIcons[_.random(0, permutationIcons.length - 1)];
       const testImageMeta = await sharp(
         await randomPermutation[1].png().toBuffer()
       ).metadata();
-      const randomLeft = _.random(0, 800);
-      const randomTop = _.random(0, 800);
+      const [randomLeft, randomTop] = getUnusedPosition(
+        blockedAreas,
+        testImageMeta.width,
+        testImageMeta.height
+      );
       regions.push({
         tagId: randomPermutation[0].id,
-        left: (randomLeft - 5) / 1000,
-        top: (randomTop - 5) / 1000,
-        width: (testImageMeta.width + 5) / 1000,
-        height: (testImageMeta.height + 5) / 1000,
+        left: (randomLeft - 5) / 2000,
+        top: (randomTop - 5) / 2000,
+        width: (testImageMeta.width + 5) / 2000,
+        height: (testImageMeta.height + 5) / 2000,
       });
 
       trainingImage = sharp(
