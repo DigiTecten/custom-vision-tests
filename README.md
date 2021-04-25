@@ -9,4 +9,6 @@ Da die Piktogramme automatisch platziert wurden können wir auch direkt Labels z
 
 Bild und Labels werden per API an Azure CustomVisionAI gesendet und einem Projekt zugeordnet.
 
-Sind ausreichende Mengen an Trainingsdaten erzeugt kann das Modell trainiert werden. Im Falle von CustomVisionAI kann das in Zukunft nach Auswahl neuer Piktogrammtypen über die API angestoßen werden. Im Rahmen des Hackathons haben wir ein solches Modell trainiert und getestet.
+Sind ausreichende Mengen an Trainingsdaten erzeugt kann das Modell trainiert werden. Im Falle von CustomVisionAI kann das in Zukunft nach Auswahl neuer Piktogrammtypen über die API angestoßen werden. Im Rahmen des Hackathons haben wir ein solches Modell trainiert und getestet: test.js
+
+Das Modell kann über die API zur evaluierung spezieller Bildausschnitte verwendet werden: predict.js
