@@ -92,11 +92,13 @@ const generateTestPermutations = async (fileName, tag, projectId) => {
   return testImages;
 };
 
+
+
 const createTagIfNotExisting = async (projectId, tagName) => {
-  const tags = await trainer.getTags(projectId);
+  const tags = await backOff(() => trainer.getTags(projectId));
   return (
     tags.find((tag) => tag.name === tagName) ||
-    trainer.createTag(projectId, tagName)
+    backOff(() =>trainer.createTag(projectId, tagName))
   );
 };
 
